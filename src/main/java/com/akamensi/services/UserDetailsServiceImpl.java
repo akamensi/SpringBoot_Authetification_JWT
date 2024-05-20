@@ -13,14 +13,13 @@ import com.akamensi.entities.User;
 
 
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailsService { //It is responsible for loading user details by username during the authentication process
 	
 	private UserRepository userRepository; 
 	
 	
 
 	public UserDetailsServiceImpl(UserRepository userRepository) {
-		super();
 		this.userRepository = userRepository;
 	}
 

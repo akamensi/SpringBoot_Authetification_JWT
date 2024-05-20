@@ -1,6 +1,7 @@
 package com.akamensi.jwt;
 
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
 import org.slf4j.Logger;
@@ -12,12 +13,13 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-
+import jakarta.annotation.PostConstruct;
 
 import com.akamensi.services.UserDetailsImpl;
 
 @Component
-public class JwtUtils {
+public class JwtUtils {  //Utility class for handling JWT operations.
+	
   private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
   
@@ -26,6 +28,18 @@ public class JwtUtils {
   
   @Value("${jwtExpirationMs}")
   private int jwtExpirationMs;
+  
+  
+	
+	
+	  @PostConstruct //To validate the jwtSecret when the application starts public
+	  void validateSecret() { if (jwtSecret == null || jwtSecret.length() < 600) {
+	  throw new
+	  IllegalArgumentException("JWT secret key must be at least 32 characters long"
+	  ); } }
+	 
+	 
+  
 
   public String generateJwtToken(Authentication authentication) {
 
@@ -35,21 +49,31 @@ public class JwtUtils {
         .setSubject((userPrincipal.getUsername()))
         .setIssuedAt(new Date())
         .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+        .claim("roles", userPrincipal.getAuthorities()) //additional context and security:
         .signWith(key(), SignatureAlgorithm.HS256)
         .compact();
   }
   
   
-  //pour le cryptage de token
-  private Key key() {
-	byte[] secret = jwtSecret.getBytes();
-	return Keys.hmacShaKeyFor(secret);
-  }
+	
+	
+	/*
+	 * //it didn't work knowin cause for anathor time
+	 * private Key key() { byte[] secret = Base64.getDecoder().decode(jwtSecret);
+	 * return Keys.hmacShaKeyFor(secret); }
+	 */
+	  
+//for crypting token and Base64.getDecoder() to ensure proper encoding
+	  private Key key() { byte[] secret = jwtSecret.getBytes(); return
+	  Keys.hmacShaKeyFor(secret); }
+	 
 
-  public String getUserNameFromJwtToken(String token) {
+	  
+  public String getUserNameFromJwtToken(String token) { //how to extract a username from a JWT token.
     return Jwts.parserBuilder().setSigningKey(key()).build()
                .parseClaimsJws(token).getBody().getSubject();
   }
+  
 
   public boolean validateJwtToken(String authToken) {
     try {

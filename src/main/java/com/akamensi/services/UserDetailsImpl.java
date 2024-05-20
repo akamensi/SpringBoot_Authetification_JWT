@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.akamensi.entities.User;
 
 
-public class UserDetailsImpl implements UserDetails {
+public class UserDetailsImpl implements UserDetails {  //It represents a custom implementation of user details used for authentication and authorization purposes
 	
 
 	private static final long serialVersionUID = 1L;
@@ -39,22 +39,26 @@ public class UserDetailsImpl implements UserDetails {
 	    this.authorities = authorities;
 	  }
 
-	  public static UserDetailsImpl build(User user) {
-	    List<GrantedAuthority> authorities = user.getRoles().stream()
-	        .map(role -> new SimpleGrantedAuthority(role.getName().name()))
-	        .collect(Collectors.toList());
+	    public static UserDetailsImpl build(User user) { // for creating UserDetailsImpl objects from User entities.
+	        if (user == null) {
+	            throw new IllegalArgumentException("User cannot be null");
+	        }
 
-	    return new UserDetailsImpl(
-	        user.getId(), 
-	        user.getUsername(), 
-	        user.getEmail(),
-	        user.getPassword(), 
-	        authorities);
-	  }
+	        List<GrantedAuthority> authorities = user.getRoles().stream()
+	                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
+	                .collect(Collectors.toList());
+
+	        return new UserDetailsImpl(
+	                user.getId(),
+	                user.getUsername(),
+	                user.getEmail(),
+	                user.getPassword(),
+	                authorities);
+	    }
 
 	  @Override
 	  public Collection<? extends GrantedAuthority> getAuthorities() {
-	    return authorities;
+	    return authorities;  //Returns the collection of authorities (roles) assigned to the user.
 	  }
 
 	  public Long getId() {

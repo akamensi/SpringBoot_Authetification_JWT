@@ -52,7 +52,7 @@ public class AuthService {
 	
 	  public ResponseEntity<?> registerUser(SignupRequest signUpRequest) {
 		  
-		  //verification d'exitance
+		  //checks if the username and email provided in the signup request already exist in the database
 		    if (userRepository.existsByUsername(signUpRequest.getUsername())) {
 		      return ResponseEntity
 		          .badRequest()
@@ -65,42 +65,41 @@ public class AuthService {
 		          .body(new MessageResponse("Error: Email is already in use!"));
 		    }
 
-		    // Create new user's account
+		    // creates a new User entity
 		    User user = new User(signUpRequest.getUsername(), 
 		               signUpRequest.getEmail(),
-		               encoder.encode(signUpRequest.getPassword()));
+		               encoder.encode(signUpRequest.getPassword())); //encodes the password using the PasswordEncoder
 
-		    Set<String> strRoles = signUpRequest.getRole();  // Ce qu'on récupère du Request
+		    Set<String> strRoles = signUpRequest.getRole();  // 
 		    
 		    Set<Role> roles = new HashSet<>(); // ce qu'on doit créer et sauvegarder dans la base pour chaque User
-
-		    if (strRoles == null) {
-		      Role userRole = roleRepository.findByName(ERole.USER)
-		          .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-		      roles.add(userRole);
-		    } else {
-		      strRoles.forEach(role -> {
-		        switch (role) {
-		        case "admin":
-		          Role adminRole = roleRepository.findByName(ERole.ADMIN)
-		              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-		          roles.add(adminRole);
-
-		          break;
-		        case "superadmin":
-		          Role superAdminRole = roleRepository.findByName(ERole.SUPER_ADMIN)
-		              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-		          roles.add(superAdminRole);
-
-		          break;
-		        default:
-		          Role userRole = roleRepository.findByName(ERole.USER)
-		              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-		          roles.add(userRole);
-		        }
-		      });
-		    }
-
+       if (strRoles == null) {
+            Role userRole = roleRepository.findByName(ERole.USER)
+                                          .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            roles.add(userRole);
+        } else {
+            strRoles.forEach(role -> {
+                Role foundRole = roleRepository.findByName(ERole.valueOf(role.toUpperCase()))
+                                               .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                roles.add(foundRole);
+            });
+        }
+/*
+ * if (strRoles == null) { //assigns roles based on the request Role userRole =
+ * roleRepository.findByName(ERole.USER) .orElseThrow(() -> new
+ * RuntimeException("Error: Role is not found.")); roles.add(userRole); } else {
+ * strRoles.forEach(role -> { switch (role) { case "admin": Role adminRole =
+ * roleRepository.findByName(ERole.ADMIN) .orElseThrow(() -> new
+ * RuntimeException("Error: Role is not found.")); roles.add(adminRole);
+ * 
+ * break; case "superadmin": Role superAdminRole =
+ * roleRepository.findByName(ERole.SUPER_ADMIN) .orElseThrow(() -> new
+ * RuntimeException("Error: Role is not found.")); roles.add(superAdminRole);
+ * 
+ * break; default: Role userRole = roleRepository.findByName(ERole.USER)
+ * .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+ * roles.add(userRole); } }); }
+ */
 		    user.setRoles(roles);
 		    userRepository.save(user);
 
@@ -110,17 +109,17 @@ public class AuthService {
 	  
 	  public ResponseEntity<?> authenticateUser(LoginRequest loginRequest) {
 
-		  //1-get Authentication
+		  //1- It authenticates the user using the AuthenticationManager
 			
 			  Authentication authentication = authenticationManager.authenticate( new
 			  UsernamePasswordAuthenticationToken(loginRequest.getUsername(),loginRequest.getPassword()));
 			 
 
-	     //2-get token
+	     //2-generates a JWT token using JwtUtils
 	    SecurityContextHolder.getContext().setAuthentication(authentication);
 	    String jwt = jwtUtils.generateJwtToken(authentication);
 	    
-	    //3-get User details
+	    //3-retrieves user details
 	    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 	    
 	     //4-get roles

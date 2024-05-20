@@ -13,15 +13,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import com.akamensi.jwt.AuthEntryPointJwt;
 import com.akamensi.jwt.AuthTokenFilter;
 import com.akamensi.services.UserDetailsServiceImpl;
 
 @EnableWebSecurity
 @Configuration
-public class SecurityConfiguration {
-	
+public class SecurityConfiguration  {
+//class is responsible for configuring Spring Security settings for the application	
 	 
 	 private UserDetailsServiceImpl userDetailsService;
  
@@ -51,7 +50,7 @@ public class SecurityConfiguration {
 	  }
 
 	  @Bean
-	  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	   SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 	    http.csrf(csrf -> csrf.disable())
 	        .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -76,11 +75,38 @@ public class SecurityConfiguration {
 	    return new BCryptPasswordEncoder();
 	  }
 	
-	 @Bean
+	 @Bean// pour refreche le dossier uploads au lancement de projet
 	     WebSecurityCustomizer webSecurityCustomizer() throws Exception {
 	        return (web) -> web.ignoring().requestMatchers("/uploads/**");
 	    }
 	
+	 /*
+	  other requestMatchers for HTTP methods, Suppose we have the following endpoints in our application:
+
+      /api/public - Public endpoint accessible to all users.
+     /api/admin - Admin-only endpoint.
+     /api/data - Endpoint to access sensitive data. :
+	  
+	  (auth ->
+    auth.authorizeRequests(requests ->
+        requests
+            // Public endpoint accessible to all users
+            .antMatchers(HttpMethod.GET, "/api/public").permitAll()
+            
+            // Admin-only endpoint restricted to admin users
+            .antMatchers(HttpMethod.GET, "/api/admin").hasRole("ADMIN")
+            
+            // Endpoint to access sensitive data restricted to authenticated users
+            .antMatchers(HttpMethod.POST, "/api/data").authenticated()
+            .antMatchers(HttpMethod.PUT, "/api/data").authenticated()
+            .antMatchers(HttpMethod.DELETE, "/api/data").authenticated()
+            
+            // All other requests require authentication
+            .anyRequest().authenticated()
+    )
+);
+
+	  */
 	
 	
 }
